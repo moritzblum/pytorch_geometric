@@ -133,7 +133,7 @@ class Wikidata5m(InMemoryDataset):
                         relation_to_id[relation] = len(relation_to_id)
                     edge_type.append(relation_to_id[relation])
 
-            data = Data(edge_index=torch.tensor(edge_index), edge_type=torch.tensor(edge_type))
+            data = Data(edge_index=torch.tensor(edge_index).T, edge_type=torch.tensor(edge_type))
             data_list.append(data)
 
         with open(osp.join(self.processed_dir, 'relation_to_id.json'), 'w') as relation_2_id_out:

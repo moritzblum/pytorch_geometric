@@ -24,14 +24,24 @@ class KGEModel(torch.nn.Module):
         num_relations: int,
         hidden_channels: int,
         sparse: bool = False,
+        features=None
     ):
         super().__init__()
 
         self.num_nodes = num_nodes
         self.num_relations = num_relations
         self.hidden_channels = hidden_channels
+        self.features = features
+        self.input_dim = self.features.size(1)
 
-        self.node_emb = Embedding(num_nodes, hidden_channels, sparse=sparse)
+        if self.num_nodes != self.features.size(0):
+            raise IndexError('Num. of entities and number of provided feature vectors does not match.')
+
+
+        if self.features == None:
+            self.node_emb = Embedding(num_nodes, hidden_channels, sparse=sparse)
+        else:
+            self.node_emb = features
         self.rel_emb = Embedding(num_relations, hidden_channels, sparse=sparse)
 
     def reset_parameters(self):

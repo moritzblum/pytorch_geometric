@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from torch import Tensor
+from torch import Tensor, nn
 
 from torch_geometric.nn.kge import KGEModel
 
@@ -40,15 +40,21 @@ class DistMult(KGEModel):
         hidden_channels: int,
         margin: float = 1.0,
         sparse: bool = False,
+        features=None
     ):
-        super().__init__(num_nodes, num_relations, hidden_channels, sparse)
+        super().__init__(num_nodes, num_relations, hidden_channels, sparse, features=features)
 
         self.margin = margin
+
+        if self.features != None:
+            self.fc_head = nn.Linear(self.input_dim, hidden_channels)
+            self.fc_tail = nn.Linear(self.input_dim, hidden_channels)
 
         self.reset_parameters()
 
     def reset_parameters(self):
-        torch.nn.init.xavier_uniform_(self.node_emb.weight)
+        if self.features == None:
+            torch.nn.init.xavier_uniform_(self.node_emb.weight)
         torch.nn.init.xavier_uniform_(self.rel_emb.weight)
 
     def forward(
@@ -57,10 +63,17 @@ class DistMult(KGEModel):
         rel_type: Tensor,
         tail_index: Tensor,
     ) -> Tensor:
-
-        head = self.node_emb(head_index)
         rel = self.rel_emb(rel_type)
-        tail = self.node_emb(tail_index)
+
+        if self.features == None:
+            head = self.node_emb(head_index)
+            tail = self.node_emb(tail_index)
+        else:
+            head = self.node_emb[head_index]
+            head = self.fc_head(head)
+
+            tail = self.node_emb[tail_index]
+            tail = self.fc_tail(tail)
 
         return (head * rel * tail).sum(dim=-1)
 
