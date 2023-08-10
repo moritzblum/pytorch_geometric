@@ -3,6 +3,7 @@ import os.path as osp
 
 import torch
 import torch.optim as optim
+from tqdm import tqdm
 
 from torch_geometric.datasets.wikidata5m import Wikidata5m
 from torch_geometric.nn import ComplEx, DistMult, RotatE, TransE
@@ -27,7 +28,6 @@ train_data = train_dataset[0].to(device)
 entity_features = train_dataset.load_features().to(device)
 val_data = Wikidata5m(path, split='val', setting='transductive')[0].to(device)
 test_data = Wikidata5m(path, split='test', setting='transductive')[0].to(device)
-print(val_data.size())
 
 model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[args.model](
@@ -58,8 +58,7 @@ optimizer = optimizer_map[args.model]
 def train():
     model.train()
     total_loss = total_examples = 0
-    for head_index, rel_type, tail_index in loader:
-        print(head_index.size())
+    for head_index, rel_type, tail_index in tqdm(loader):
         optimizer.zero_grad()
         loss = model.loss(head_index, rel_type, tail_index)
         loss.backward()
@@ -84,7 +83,7 @@ def test(data):
 for epoch in range(1, 501):
     loss = train()
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
-    if epoch % 25 == 0:
+    if epoch % 5 == 0:
         rank, hits = test(val_data)
         print(f'Epoch: {epoch:03d}, Val Mean Rank: {rank:.2f}, '
               f'Val Hits@10: {hits:.4f}')
